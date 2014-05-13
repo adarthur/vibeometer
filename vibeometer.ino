@@ -1,4 +1,3 @@
-
 /*
  Arduino Vibeometer
   
@@ -13,7 +12,7 @@
 #include <SPI.h>
 #include <WiFi.h>
 
-#define NUMLEDS 3
+#define NUMLEDS 3 //number of LED panels to update
 #define MAXFREQ 5.0 //highest frequency of the LED "heartbeat" (Hz)
 
 
@@ -22,7 +21,7 @@
 #define MENTIONPIN 5 //pin for the "thanks for the mention" indicator
 
 
-//pins for shift register (for 7-segments)
+//pins for shift register
 const int latchPin = 8;
 const int clockPin = 3;
 const int dataPin = 2;
@@ -34,15 +33,14 @@ int numMentions = 0; //number of mentions (displayed on 7-seg)
 int lastMentions = 0; 
 double tweetCount[3]; //counters for each type of tweet
 
-char ssid[] = "ncsu"; //  your network SSID (name) 
-String currentLine = "";
-String getString = "/display/techshowcase/getTweets.php"; //URL to GET
+char ssid[] = "ncsu"; //network SSID (ncsu doesn't require a password but does require registration with NOMAD
+String currentLine = ""; //holder for parsing output from 
+String getString = "[your URL here]"; //URL to GET (location of PHP page)
 
 int status = WL_IDLE_STATUS;
-// if you don't want to use DNS (and reduce your sketch size)
-// use the numeric IP instead of the name for the server:
-//IPAddress server(152,14,136,38);  // numeric IP for NCSU Libraries (no DNS)
-char server[] = "webdev.lib.ncsu.edu";    // name address for NCSU Libraries (using DNS)
+//if you don't want to use DNS (and reduce your sketch size)
+//use the numeric IP instead of the name for the server:
+char server[] = "[your server here]";    //name address for your server
 
 // Initialize the Ethernet client library
 // with the IP address and port of the server 
@@ -139,11 +137,11 @@ void loop() {
   i = 0;
   char charBuff[10];
 
-  if(client.find("\r\n\r\n")){  
-    while (client.available()) {
-      char c = client.read();
-      if(c == ':') {
-        currentLine.toCharArray(charBuff, 10);        
+  if(client.find("\r\n\r\n")){ //skip the header of the message
+    while (client.available()) {               // the data we're reading is in the format "g:b:m_xxx"
+      char c = client.read();    q             // the last three numbers are deprecated, but g is the number
+      if(c == ':') {                           // of good tweets, b the number of bad tweets, and m the number
+        currentLine.toCharArray(charBuff, 10); // of mentions       
         tweetCount[i] = atoi(charBuff);
         currentLine = "";
         i++;
@@ -160,23 +158,26 @@ void loop() {
       
     }
 
-    client.flush();
+    client.flush(); //get rid of anything in the buffer
   }
 
   updateLEDs();
+  
+  //translate ASCII to decimal (deprecated feature)
   for(i = 0; i < 3; i++) {
     if(mentioned[i] == 48) mentioned[i] = 0;
     if(mentioned[i] == 49) mentioned[i] = 1;
     updateLEDs();
   }
 
-  // if the server's disconnected, stop the client:
+  // if the server's disconnected, stop the client
   if (!client.connected()) {
     Serial.println();
     Serial.println("disconnecting from server.");
     updateLEDs();
   }
   
+  //set the frequencies of the flashing of the good and bad mood panels
   double totalTweets = tweetCount[0] + tweetCount[1];
   ledFreqs[0] = MAXFREQ * (tweetCount[0] / totalTweets);
   ledFreqs[1] = MAXFREQ * (tweetCount[1] / totalTweets);
@@ -185,21 +186,24 @@ void loop() {
 
   //handle outputs regarding mentions @vibeometer
   numMentions = tweetCount[2];
-
+  
+  //flash the "thanks for the @mention" panel if there is a new mention
   if(numMentions > lastMentions) ledFreqs[2] = MAXFREQ;
   else ledFreqs[2] = 0;
   
-  if(numMentions >= 100) numMentions = 99;
+  if(numMentions >= 100) numMentions = 99; // make sure the count never goes above two digits
   
   lastMentions = numMentions;
   updateCounter(numMentions);
 
+  //let the mention panel flash for 3 seconds
   for(currentMillis = millis(); millis() - currentMillis < 3000; ) { 
     updateLEDs();
   }
   
   ledFreqs[2] = 0;
   
+  //wait 9 more seconds before starting again
   for(currentMillis = millis(); millis() - currentMillis < 9000; ) { 
     updateLEDs();
   }
@@ -222,6 +226,7 @@ void printWifiStatus() {
   Serial.println(" dBm");
 }
 
+//Send some decimal number to the 2-digit 7-segment counter
 void updateCounter(int x) {
   byte highNibble = x / 10; //tens digit
   byte lowNibble = x % 10; //ones digit
@@ -232,6 +237,7 @@ void updateCounter(int x) {
   digitalWrite(latchPin, HIGH);
 }
 
+//Update LED brightness to follow a sinusoid
 void updateLEDs() {
   int nowMillis = millis();
   for(int i = 0; i <= 2; i++) {
