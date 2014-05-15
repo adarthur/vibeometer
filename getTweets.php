@@ -78,7 +78,7 @@
 			$tweetSecond = $explodedTime[2];
 			//echo "$tweetTimeStamp " . date('d H:i') . "<br />"; //for debugging time comparison
 			if($tweetDate == date('d') && $tweetHour == date('H') && $tweetMinute == date('i')) $newTweet[$i] = 1;
-			if(date('H') - $tweetHour < 2 && $i != 2) $count[$i]++; //good and bad counts go by the hour
+			if($tweetDate == date('d') && date('H') - $tweetHour < 2 && $i != 2) $count[$i]++; //good and bad counts go by the hour
 			if($tweetDate == date('d') && $i == 2) $count[$i]++; //@mention count goes by the day
 			$j++; //move on to the next tweet in the category
 			//keep going until 30 or if the timestamp doesn't exist anymore (i.e., you run out of tweets)
