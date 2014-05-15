@@ -8,7 +8,6 @@
  by Aaron Arthur
 */
 
-
 #include <SPI.h>
 #include <WiFi.h>
 
@@ -20,6 +19,7 @@
 #define BADPIN 6 //pin for the "unhappy tweet" indicator
 #define MENTIONPIN 5 //pin for the "thanks for the mention" indicator
 
+#define UPDATE_MOOD_FREQ(X) (18*sin(PI*24*(X))+1) // When someone tweets @vibeometer with a mood word, the frequency of that mood panel changes according to this (see the end of loop)
 
 //pins for shift register
 const int latchPin = 8;
@@ -28,10 +28,13 @@ const int dataPin = 2;
 
 const int ledPins[NUMLEDS] = {GOODPIN, BADPIN, MENTIONPIN}; //put the pins in an array for easy access
 double ledFreqs[NUMLEDS]; //frequencies at which LEDs are to blink
+double tempFreqs[NUMLEDS]; //temporary storage for frequency values
 int mentioned[NUMLEDS]; //did something happen on Twitter? order is good, bad, mentioned
 int numMentions = 0; //number of mentions (displayed on 7-seg)
 int lastMentions = 0; 
-double tweetCount[3]; //counters for each type of tweet
+int tweetCount[3]; //counters for each type of tweet
+int lastGoodTweets = 0;
+int lastBadTweets = 0;
 
 char ssid[] = "ncsu"; //network SSID (ncsu doesn't require a password but does require registration with NOMAD
 String currentLine = ""; //holder for parsing output from 
@@ -180,20 +183,29 @@ void loop() {
   //set the frequencies of the flashing of the good and bad mood panels
   double totalTweets = tweetCount[0] + tweetCount[1];
   ledFreqs[0] = MAXFREQ * (tweetCount[0] / totalTweets);
-  ledFreqs[1] = MAXFREQ * (tweetCount[1] / totalTweets);
+  ledFreqs[1] = MAXFREQ * (tweetCount[1] / totalTweets); 
   
-  //ledFreqs[0] = 5*analogRead(A5)/1023 + 1; //for testing with potentiometer
-
   //handle outputs regarding mentions @vibeometer
   numMentions = tweetCount[2];
   
-  //flash the "thanks for the @mention" panel if there is a new mention
+  //flash the "thanks for the @mention" panel if there is a new mention of @vibeometer
   if(numMentions > lastMentions) ledFreqs[2] = MAXFREQ;
   else ledFreqs[2] = 0;
+  
+  //store the frequency values so they can be restored later if the frequency is changed below
+  tempFreqs[0] = ledFreqs[0];
+  tempFreqs[1] = ledFreqs[1];
+  //if there is a good tweet @vibeometer, flash the good mood panel at twice the MAX
+  if(numMentions > lastMentions && tweetCount[0] > lastGoodTweets) ledFreqs[0] = 2*MAXFREQ;
+  //same thing for a bad tweet @vibeometer
+  if(numMentions > lastMentions && tweetCount[1] > lastBadTweets) ledFreqs[1] = 2*MAXFREQ;
   
   if(numMentions >= 100) numMentions = 99; // make sure the count never goes above two digits
   
   lastMentions = numMentions;
+  lastGoodTweets = twetCount[0];
+  lastBadTweets = tweetCount[1];
+  
   updateCounter(numMentions);
 
   //let the mention panel flash for 3 seconds
@@ -207,6 +219,10 @@ void loop() {
   for(currentMillis = millis(); millis() - currentMillis < 9000; ) { 
     updateLEDs();
   }
+  
+  //let the mood panels flash at the proper frequency again
+  ledFreqs[0] = tempFreqs[0];
+  ledFreqs[1] = tempFreqs[1];
 }
 
 void printWifiStatus() {
@@ -243,5 +259,4 @@ void updateLEDs() {
   for(int i = 0; i <= 2; i++) {
     analogWrite(ledPins[i],255*sin(PI*ledFreqs[i]*nowMillis/1000)*sin(PI*ledFreqs[i]*nowMillis/1000));
   }
-  return;
 }
