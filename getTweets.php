@@ -78,8 +78,16 @@
 			$tweetSecond = $explodedTime[2];
 			//echo "$tweetTimeStamp " . date('d H:i') . "<br />"; //for debugging time comparison
 			if($tweetDate == date('d') && $tweetHour == date('H') && $tweetMinute == date('i')) $newTweet[$i] = 1;
-			if($tweetDate == date('d') && date('H') - $tweetHour < 2 && $i != 2) $count[$i]++; //good and bad counts go by the hour
-			if($tweetDate == date('d') && $i == 2) $count[$i]++; //@mention count goes by the day
+			if($tweetDate == date('d') && date('H') - $tweetHour < 2 && $i != 2) $count[$i]++; //count good/bad tweets from the last hour
+			if($tweetDate == date('d') && $i == 2) 
+			{
+				$count[$i]++; //count mentions from the last day
+				if($tweetDate == date('d') && $tweetHour == date('H') && $tweetMinute == date('i'))
+				{
+					if(is_good_tweet($obj["statuses"][$j]["text"])) $newTweet[0] = 1;
+					if(is_bad_tweet($obj["statuses"][$j]["text"])) $newTweet[1] = 1;
+				}
+			}
 			$j++; //move on to the next tweet in the category
 			//keep going until 30 or if the timestamp doesn't exist anymore (i.e., you run out of tweets)
 		} while ($tweetDate > 0 && $j < $tweetCount); 
@@ -97,5 +105,20 @@
 	for($i = 0; $i < 3; $i++) {
 		echo "$newTweet[$i]";
     }
-
+	
+	function is_good_tweet($tweet_text) {
+		$subject = $tweet_text;
+		$good_pattern = '/good|great|happy|better|lucky|best/';
+		
+		if(preg_match($good_pattern, $subject)) return true;
+		else return false;
+	}
+	
+	function is_bad_tweet($tweet_text) {
+		$subject = $tweet_text;
+		$bad_pattern = '/sad|annoyed|grumpy|sick|angry|mad/';
+		
+		if(preg_match($bad_pattern, $subject)) return true;
+		else return false;
+	}
 ?>
