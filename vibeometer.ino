@@ -1,57 +1,53 @@
+
 /*
- Arduino Vibeometer
+   Arduino Vibeometer
   
  This sketch controls a device that interacts with Twitter to display the campus mood at NC State University. 
   
- created 13 July 2010
- modified 13 May 2014
+ created 1 November 2013
+ modified 22 May 2014
  by Aaron Arthur
 */
 
-#include <SPI.h>
 #include <WiFi.h>
 
-#define NUMLEDS 3 //number of LED panels to update
-#define MAXFREQ 5.0 //highest frequency of the LED "heartbeat" (Hz)
+#define MAXFREQ 5.0 // highest frequency of the LED "heartbeat" (Hz)
 
+#define NUMLEDS 3 // number of LED panels to update
 
-#define GOODPIN 9 //pin for the "happy tweet" indicator
-#define BADPIN 6 //pin for the "unhappy tweet" indicator
-#define MENTIONPIN 5 //pin for the "thanks for the mention" indicator
+#define GOODPIN 9 // pin for the "happy tweet" indicator
+#define BADPIN 6 // pin for the "unhappy tweet" indicator
+#define MENTIONPIN 5 // pin for the "thanks for the mention" indicator
 
-#define UPDATE_MOOD_FREQ(X) (18*sin(PI*24*(X))+1) // When someone tweets @vibeometer with a mood word, the frequency of that mood panel changes according to this (see the end of loop)
-
-//pins for shift register
+// pins for shift register
 const int latchPin = 8;
 const int clockPin = 3;
 const int dataPin = 2;
 
-const int ledPins[NUMLEDS] = {GOODPIN, BADPIN, MENTIONPIN}; //put the pins in an array for easy access
-double ledFreqs[NUMLEDS]; //frequencies at which LEDs are to blink
-double tempFreqs[NUMLEDS]; //temporary storage for frequency values
-int mentioned[NUMLEDS]; //did something happen on Twitter? order is good, bad, mentioned
-int numMentions = 0; //number of mentions (displayed on 7-seg)
-int lastMentions = 0; 
-int tweetCount[3]; //counters for each type of tweet
-int lastGoodTweets = 0;
-int lastBadTweets = 0;
+// arrays for LED information
+const int ledPins[NUMLEDS] = {GOODPIN, BADPIN, MENTIONPIN}; // put the pins in an array for easy access
+double ledFreqs[NUMLEDS]; // frequencies at which LEDs are to blink
+double tempFreqs[NUMLEDS]; // temporary storage for frequency values
+int mentioned[NUMLEDS]; // is there a new mention? order is good mention, bad mention, regular mention
 
-char ssid[] = "ncsu"; //network SSID (ncsu doesn't require a password but does require registration with NOMAD
-String currentLine = ""; //holder for parsing output from 
-String getString = "[your URL here]"; //URL to GET (location of PHP page)
+//tweet stuff
+int numMentions = 0; // number of mentions (displayed on 7-seg)
+int lastMentions = 0; // a temp variable for the above
+int tweetCount[3]; // counters for each type of tweet; format is {good tweets, bad tweets, mentions}
+int lastGoodTweets = 0; // temp variable for tweetCount[0]
+int lastBadTweets = 0; // temp variable for tweetCount[1]
+
+char ssid[] = "ncsu"; // network SSID (ncsu doesn't require a password but does require registration with NOMAD
+String currentLine = ""; // holder for parsing output from web page
+String getString = "/display/techshowcase/getTweets.php"; // URL to GET (location of PHP page)
 
 int status = WL_IDLE_STATUS;
-//if you don't want to use DNS (and reduce your sketch size)
-//use the numeric IP instead of the name for the server:
-char server[] = "[your server here]";    //name address for your server
+char server[] = "webdev.lib.ncsu.edu"; // name address for your server
 
-// Initialize the Ethernet client library
-// with the IP address and port of the server 
-// that you want to connect to (port 80 is default for HTTP):
 WiFiClient client;
 
 void setup() {
-  //initialize LED stiff
+  // initialize LED stiff
   int i;
 
   pinMode(latchPin, OUTPUT);
@@ -70,13 +66,13 @@ void setup() {
     tweetCount[i] = 0;
   }
 
-  //Initialize serial and wait for port to open:
+  // Initialize serial and wait for port to open:
   Serial.begin(9600); 
   while (!Serial) {
     ; // wait for serial port to connect. Needed for Leonardo only
   }
 
-  //initialize the counter to 0
+  //initialize the counter display to "00"
   updateCounter(0);
 
   // check for the presence of the shield:
@@ -88,8 +84,8 @@ void setup() {
 
   // attempt to connect to Wifi network:
   while ( status != WL_CONNECTED) { 
-    Serial.print("Attempting to connect to SSID: ");
-    Serial.println(ssid);
+    //Serial.print("Attempting to connect to SSID: ");
+    //Serial.println(ssid);
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:  
     // Nope, for us it's an open network (NCSU Nomad)  
     status = WiFi.begin(ssid);
@@ -98,7 +94,7 @@ void setup() {
     delay(5000);
   } 
 
-  //Hooray, we're connected (probably; check serial output to be sure
+  // Connected (probably); check serial output to be sure
   Serial.println("Connected to wifi");
   printWifiStatus();
 }
@@ -108,14 +104,14 @@ void loop() {
   long currentMillis = millis();
   int freqTest;
   updateLEDs();
-  Serial.println("\nStarting connection to server...");
+  //Serial.println("\nStarting connection to server...");
   // if you get a connection, report back via serial:
   if (client.connect(server, 80)) {
     updateLEDs();
-    Serial.print(millis());
-    updateLEDs();
-    Serial.println("connected to server");
-    updateLEDs();
+    //Serial.print(millis());
+    //updateLEDs();
+    //Serial.println("connected to server");
+    //updateLEDs();
     // Make a HTTP request:
     client.print("GET ");
     updateLEDs();
@@ -139,13 +135,13 @@ void loop() {
   String currentLine = "";
   i = 0;
   char charBuff[10];
-
-  if(client.find("\r\n\r\n")){ //skip the header of the message
-    while (client.available()) {               // the data we're reading is in the format "g:b:m_xxx"
-      char c = client.read();    q             // the last three numbers are deprecated, but g is the number
-      if(c == ':') {                           // of good tweets, b the number of bad tweets, and m the number
-        currentLine.toCharArray(charBuff, 10); // of mentions       
-        tweetCount[i] = atoi(charBuff);
+  
+  if(client.find("\r\n\r\n")){ // skip the header of the message
+    while (client.available()) {               // the data we're reading is in the format "g:b:m_nnn"
+      char c = client.read();                  // g is the numberof good tweets, b the number of bad tweets,
+      if(c == ':') {                           // and m the number of mentions. These influence the mood panels.
+        currentLine.toCharArray(charBuff, 10); // n1, n2, and n3 are 1 if there is a new good tweet mentioning @vibeometer,
+        tweetCount[i] = atoi(charBuff);        // bad tweet mentioning it, or just a new mention, respectively.
         currentLine = "";
         i++;
       }
@@ -166,63 +162,81 @@ void loop() {
 
   updateLEDs();
   
-  //translate ASCII to decimal (deprecated feature)
+  // translate ASCII to decimal
   for(i = 0; i < 3; i++) {
     if(mentioned[i] == 48) mentioned[i] = 0;
     if(mentioned[i] == 49) mentioned[i] = 1;
     updateLEDs();
   }
 
-  // if the server's disconnected, stop the client
-  if (!client.connected()) {
+  // if the server's disconnected, stop the client (debugging)
+  /*if (!client.connected()) {
     Serial.println();
     Serial.println("disconnecting from server.");
     updateLEDs();
-  }
+  }*/
   
-  //set the frequencies of the flashing of the good and bad mood panels
+  // set the frequencies of the flashing of the good and bad mood panels
   double totalTweets = tweetCount[0] + tweetCount[1];
   ledFreqs[0] = MAXFREQ * (tweetCount[0] / totalTweets);
   ledFreqs[1] = MAXFREQ * (tweetCount[1] / totalTweets); 
   
-  //handle outputs regarding mentions @vibeometer
+  /*
+   * handle outputs regarding mentions of @vibeometer
+   */
+   
   numMentions = tweetCount[2];
   
-  //flash the "thanks for the @mention" panel if there is a new mention of @vibeometer
-  if(numMentions > lastMentions) ledFreqs[2] = MAXFREQ;
+  // flash the "thanks for the @mention" panel if there is a new mention of @vibeometer
+  if(numMentions > lastMentions) {
+    ledFreqs[2] = MAXFREQ;
+    //Serial.println("new mention");
+  }
   else ledFreqs[2] = 0;
   
-  //store the frequency values so they can be restored later if the frequency is changed below
+  // store the frequency values so they can be restored later if the frequency is changed below
   tempFreqs[0] = ledFreqs[0];
   tempFreqs[1] = ledFreqs[1];
-  //if there is a good tweet @vibeometer, flash the good mood panel at twice the MAX
-  if(numMentions > lastMentions && tweetCount[0] > lastGoodTweets) ledFreqs[0] = 2*MAXFREQ;
-  //same thing for a bad tweet @vibeometer
-  if(numMentions > lastMentions && tweetCount[1] > lastBadTweets) ledFreqs[1] = 2*MAXFREQ;
+  
+  // if there is a new good tweet, flash the good mood panel at 8 Hz
+  if(tweetCount[0] > lastGoodTweets) {
+    ledFreqs[0] = 8;
+    //Serial.println("new good tweet");
+  }
+  // same thing for a bad tweet
+  if(tweetCount[1] > lastBadTweets) {
+    ledFreqs[1] = 8;
+    //Serial.println("new bad tweet");
+  }
   
   if(numMentions >= 100) numMentions = 99; // make sure the count never goes above two digits
   
   lastMentions = numMentions;
-  lastGoodTweets = twetCount[0];
+  lastGoodTweets = tweetCount[0];
   lastBadTweets = tweetCount[1];
   
   updateCounter(numMentions);
 
-  //let the mention panel flash for 3 seconds
+  // let the mention panel flash for 3 seconds
   for(currentMillis = millis(); millis() - currentMillis < 3000; ) { 
     updateLEDs();
   }
   
   ledFreqs[2] = 0;
   
-  //wait 9 more seconds before starting again
-  for(currentMillis = millis(); millis() - currentMillis < 9000; ) { 
+  // if a mood panel was just updated, let it flash for 1.5 more seconds
+  for(currentMillis = millis(); millis() - currentMillis < 1500; ) { 
     updateLEDs();
   }
-  
-  //let the mood panels flash at the proper frequency again
+
+  // let the mood panels flash at the proper frequency again
   ledFreqs[0] = tempFreqs[0];
   ledFreqs[1] = tempFreqs[1];
+  
+  // wait 6.5 more seconds before starting again
+  for(currentMillis = millis(); millis() - currentMillis < 6500; ) { 
+    updateLEDs();
+  }
 }
 
 void printWifiStatus() {
@@ -242,7 +256,7 @@ void printWifiStatus() {
   Serial.println(" dBm");
 }
 
-//Send some decimal number to the 2-digit 7-segment counter
+// display a decimal number, x, on the 2-digit 7-segment counter
 void updateCounter(int x) {
   byte highNibble = x / 10; //tens digit
   byte lowNibble = x % 10; //ones digit
@@ -253,7 +267,7 @@ void updateCounter(int x) {
   digitalWrite(latchPin, HIGH);
 }
 
-//Update LED brightness to follow a sinusoid
+// update LED brightnesses to follow sinusoids
 void updateLEDs() {
   int nowMillis = millis();
   for(int i = 0; i <= 2; i++) {
