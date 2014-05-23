@@ -38,6 +38,7 @@ int tweetCount[3]; // counters for each type of tweet; format is {good tweets, b
 int lastGoodTweets = 0; // temp variable for tweetCount[0]
 int lastBadTweets = 0; // temp variable for tweetCount[1]
 int mentioned[NUMLEDS]; // is there a new mention? order is good mention, bad mention, regular mention
+int lastMentioned[NUMLEDS]; // temp variable for mentioned[]
 
 char ssid[] = "ncsu"; // network SSID (ncsu doesn't require a password but does require registration with NOMAD
 String currentLine = ""; // holder for parsing output from web page
@@ -108,7 +109,7 @@ void loop() {
   connectToServer();
   parseWebPage();
   updateLEDs();
-	updateMoodFreqs();
+  updateMoodFreqs();
   outputToPanels();
 }
 
@@ -221,8 +222,11 @@ void parseWebPage() {
 void updateMoodFreqs() {
   double totalTweets = tweetCount[0] + tweetCount[1];
   
-	ledFreqs[0] = MAXFREQ * (tweetCount[0] / totalTweets);
-  ledFreqs[1] = MAXFREQ * (tweetCount[1] / totalTweets); 
+  if(tweetCount[0] > 0) ledFreqs[0] = MAXFREQ * (tweetCount[0] / totalTweets);
+  else ledFreqs[0] = 1; // if there's no Twitter data coming in or no tweets, flash at 1 Hz
+  
+  if(tweetCount[1] > 0) ledFreqs[1] = MAXFREQ * (tweetCount[1] / totalTweets); 
+  else ledFreqs[1] = 1;
 }
 
 // handle any output to the flashing panels
@@ -231,17 +235,21 @@ void outputToPanels() {
   tempFreqs[0] = ledFreqs[0];
   tempFreqs[1] = ledFreqs[1];
   
-  // if there is a new good tweet, flash the good mood panel at 8 Hz
-  if(mentioned[0]) {
+  // if there is a new good tweet, flash the good mood panel at 8 Hz,
+  // but only one time
+  if(mentioned[0] && mentioned[0] != lastMentioned[0]) {
     ledFreqs[0] = 8;
   }
 	
   // same thing for a bad tweet
-  if(mentioned[1]) {
+  if(mentioned[1] && mentioned[0] != lastMentioned[0]) {
     ledFreqs[1] = 8;
   }
+
+  lastMentioned[0] = mentioned[0];
+  lastMentioned[1] = mentioned[1];
 	
-	// flash the "thanks for the @mention" panel if there is a new mention of @vibeometer
+  // flash the "thanks for the @mention" panel if there is a new mention of @vibeometer
   if(numMentions > lastMentions) {
     ledFreqs[2] = MAXFREQ;
   }

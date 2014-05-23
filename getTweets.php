@@ -79,10 +79,10 @@
 			//echo "$tweetTimeStamp " . date('d H:i') . "<br />"; //for debugging time comparison
 			if($tweetDate == date('d') && $tweetHour == date('H') && $tweetMinute == date('i')) $newTweet[$i] = 1;
 			if($tweetDate == date('d') && date('H') - $tweetHour < 2 && $i != 2) $count[$i]++; //count good/bad tweets from the last hour
-			if($tweetDate == date('d') && $i == 2) 
+			if(date('d') - $tweetDate < 7 && $i == 2) 
 			{
 				$count[$i]++; //count mentions from the last day
-				if($tweetDate == date('d') && $tweetHour == date('H') && $tweetMinute == date('i'))
+				if($tweetDate == date('d') && $tweetHour == date('H') && date('i') - $tweetMinute < 2)
 				{
 					if(is_good_tweet($obj["statuses"][$j]["text"])) $newTweet[0] = 1;
 					if(is_bad_tweet($obj["statuses"][$j]["text"])) $newTweet[1] = 1;
