@@ -10,11 +10,13 @@
 */
 
 #include <WiFi.h>
+#include <avr/wdt.h>
+
+#define soft_reset() do { wdt_enable(WDTO_15MS); for(;;) { } } while (0)
+#define ONE_DAY 86400000 // 24 hrs in milliseconds
 
 #define MAXFREQ 5.0 // highest frequency of the LED "heartbeat" (Hz)
-
 #define NUMLEDS 3 // number of LED panels to update
-
 #define GOODPIN 9 // pin for the "happy tweet" indicator
 #define BADPIN 6 // pin for the "unhappy tweet" indicator
 #define MENTIONPIN 5 // pin for the "thanks for the mention" indicator
@@ -49,7 +51,11 @@ char server[] = "webdev.lib.ncsu.edu"; // name address for your server
 
 WiFiClient client;
 
+void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3"))); // to redisable the wdt after reset
+
 void setup() {
+  wdt_init(); // turn the wdt off so we don't get continual resets
+  
   // initialize LED stiff
   int i;
 
@@ -111,6 +117,8 @@ void loop() {
   updateLEDs();
   updateMoodFreqs();
   outputToPanels();
+  
+  if(millis() > ONE_DAY) soft_reset();
 }
 
 void printWifiStatus() {
@@ -279,4 +287,12 @@ void outputToPanels() {
   for(currentMillis = millis(); millis() - currentMillis < 6500; ) { 
     updateLEDs();
   }
+}
+
+void wdt_init(void)
+{
+    MCUSR = 0;
+    wdt_disable();
+
+    return;
 }
