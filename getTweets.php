@@ -13,13 +13,13 @@
 
 	$settings = array(
 
-			'oauth_access_token' => "1964944952-H3UgxKwMvOlD9knBUh9LbEvSe6yvIqdvqc1yMka",
+			'oauth_access_token' => "your access token",
 
-			'oauth_access_token_secret' => "4njJgLZPTZYfgvt4v3PZzWPesR3ILH2BSUwlG7BZy1ioA",
+			'oauth_access_token_secret' => "your secret access token",
 
-			'consumer_key' => "F3EEOFz3RU8izg3g4Gyk8A",
+			'consumer_key' => "your key",
 
-			'consumer_secret' => "sUyeTfc8UKOIDtFQxL9BrvgTecZbyJFNLg7OHkplhH8"
+			'consumer_secret' => "your consumer secret"
 
 	);
 
