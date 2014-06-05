@@ -13,13 +13,13 @@
 
 	$settings = array(
 
-			'oauth_access_token' => "your access token",
+			'oauth_access_token' => "1964944952-H3UgxKwMvOlD9knBUh9LbEvSe6yvIqdvqc1yMka",
 
-			'oauth_access_token_secret' => "your access token secret",
+			'oauth_access_token_secret' => "4njJgLZPTZYfgvt4v3PZzWPesR3ILH2BSUwlG7BZy1ioA",
 
-			'consumer_key' => "your key",
+			'consumer_key' => "F3EEOFz3RU8izg3g4Gyk8A",
 
-			'consumer_secret' => "your secret"
+			'consumer_secret' => "sUyeTfc8UKOIDtFQxL9BrvgTecZbyJFNLg7OHkplhH8"
 
 	);
 
@@ -88,7 +88,6 @@
 				{
 					if(is_good_tweet($obj["statuses"][$j]["text"])) $newTweet[0] = 1;
 					if(is_bad_tweet($obj["statuses"][$j]["text"])) $newTweet[1] = 1;
-					//respond_to_tweet($twitter, $obj["statuses"][$j]);
 				}
 			}
 			$j++; //move on to the next tweet in the category
@@ -123,29 +122,5 @@
 		
 		if(preg_match($bad_pattern, $subject)) return true;
 		else return false;
-	}
-	
-	function respond_to_tweet($twitter, $tweet_obj) {
-		$screen_name = $tweet_obj["user"]["screen_name"];
-		$subject = $tweet_obj["text"];
-		$test_pattern = '/test/';
-		
-		if(preg_match($test_pattern, $subject)) {
-			update_status($twitter, "Responding!");
-		}
-		
-		else return;
-	}
-	
-	function update_status($twitter, $status_text) {
-		$post_url = 'https://api.twitter.com/1.1/statuses/update.json';
-		$post_request = 'POST';
-		
-		$array = array('status' => $status_text);
-		$twitter->getfield = NULL;
-	
-		echo $twitter->setPostfields($array)
-					  ->buildOauth($post_url, $post_request)
-					  ->performRequest();
 	}
 ?>
