@@ -42,22 +42,14 @@
 	$twitter = new TwitterAPIExchange($settings);
 
 	$json = array($twitter->setGetfield($good_getfield)
-
-												->buildOauth($url, $requestMethod)
-
-												->performRequest(),
-
-								$twitter->setGetfield($bad_getfield)
-
-												->buildOauth($url, $requestMethod)
-
-												->performRequest(),
-
-								$twitter->setGetfield($ncsulib_getfield)
-
-												->buildOauth($url, $requestMethod)
-
-												->performRequest(),);
+		  		->buildOauth($url, $requestMethod)
+				->performRequest(),
+			$twitter->setGetfield($bad_getfield)
+				->buildOauth($url, $requestMethod)
+				->performRequest(),
+			$twitter->setGetfield($ncsulib_getfield)
+				->buildOauth($url, $requestMethod)
+				->performRequest(),);
 
 
 	$count = array(0,0,0); //number of tweets this day in each category: good, bad, @ncsulibraries
@@ -145,7 +137,7 @@
 		$twitter->getfield = NULL;
 	
 		echo $twitter->setPostfields($array)
-					  ->buildOauth($post_url, $post_request)
-					  ->performRequest();
+				  ->buildOauth($post_url, $post_request)
+				  ->performRequest();
 	}
 ?>
