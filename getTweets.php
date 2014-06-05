@@ -36,23 +36,22 @@
 
 	$good_getfield = "?q=" . $search_string . $good_search . "&count=" . $tweetCount;
 	$bad_getfield = "?q=" . $search_string . $bad_search . "&count=" . $tweetCount;
-	$ncsulib_getfield = "?q=%40vibeometer" . "&count=" . $tweetCount;
+	$mention_getfield = "?q=%40vibeometer" . "&count=" . $tweetCount;
 	$requestMethod = 'GET';
 
 	$twitter = new TwitterAPIExchange($settings);
 
 	$json = array($twitter->setGetfield($good_getfield)
-		  		->buildOauth($url, $requestMethod)
-				->performRequest(),
-			$twitter->setGetfield($bad_getfield)
 				->buildOauth($url, $requestMethod)
 				->performRequest(),
-			$twitter->setGetfield($ncsulib_getfield)
+$twitter->setGetfield($bad_getfield)
+				->buildOauth($url, $requestMethod)
+				->performRequest(),
+$twitter->setGetfield($mention_getfield)
 				->buildOauth($url, $requestMethod)
 				->performRequest(),);
 
-
-	$count = array(0,0,0); //number of tweets this day in each category: good, bad, @ncsulibraries
+				$count = array(0,0,0); //number of tweets this day in each category: good, bad, @vibeometer
 	$newTweet = array(0,0,0); //1 or 0, is there a new tweet this minute?
 
 	for($i = 0; $i < 3; $i++) {
@@ -60,32 +59,28 @@
 		$j = 0;
 		do {
 			$tweetText = $obj["statuses"][$j]["text"];
-			$tweetTimeStamp = $obj["statuses"][$j]["created_at"]; //incrementally get the timestamp of each tweet in the category
-			$explodedTimeStamp = explode(" ", $tweetTimeStamp); //isolate them into an array
-			$tweetDate = $explodedTimeStamp[2]; //give the date of the tweet, e.g. "05"
-			$explodedTime = explode(":", $explodedTimeStamp[3]);
-			$tweetHour = $explodedTime[0];
-			$tweetMinute = $explodedTime[1];
-			$tweetSecond = $explodedTime[2];
-			//echo "$tweetTimeStamp " . date('d H:i') . "<br />"; //for debugging time comparison
-			if($tweetDate == date('d') && $tweetHour == date('H') && $tweetMinute == date('i')) $newTweet[$i] = 1;
-			if($tweetDate == date('d') && date('H') - $tweetHour < 3 && $i != 2) {
-				$count[$i]++; //count good/bad tweets from the last hour
-				//if($i == 1) echo $tweetText; // for debugging
+			$tweetTime = strtotime($obj["statuses"][$j]["created_at"]); //incrementally get the timestamp of each tweet in the category
+			$nowTime = time();
+						
+			if($nowTime - $tweetTime < 60) $newTweet[$i] = 1; //tell the box to flash if there's a new good tweet in the last minute
+			
+			if($nowTime - $tweetTime < 2 * 60 * 60 && $i != 2) { //count good/bad tweets from the last two hours
+				$count[$i]++; 
 			}
-			if(date('d') - $tweetDate < 7 && $i == 2) 
+			
+			if($nowTime - $tweetTime < 7 * 24 * 60 * 60 && $i == 2) //count mentions from the last 7 days
 			{
 				$count[$i]++;
-				if($tweetDate == date('d') && $tweetHour == date('H') && date('i') - $tweetMinute < 2)
+				if($nowTime - $tweeTime < 2 * 60) //analyse and/or respond to a mention from the last minute
 				{
 					if(is_good_tweet($obj["statuses"][$j]["text"])) $newTweet[0] = 1;
 					if(is_bad_tweet($obj["statuses"][$j]["text"])) $newTweet[1] = 1;
-					//respond_to_tweet($twitter, $obj["statuses"][$j]);
+					respond_to_tweet($twitter, $obj["statuses"][$j]);
 				}
 			}
 			$j++; //move on to the next tweet in the category
-			//keep going until 30 or if the timestamp doesn't exist anymore (i.e., you run out of tweets)
-		} while ($tweetDate > 0 && $j < $tweetCount); 
+			
+		} while ($tweetTime > 0 && $j < $tweetCount); //keep going until 100 or if the timestamp doesn't exist anymore (i.e., you run out of tweets)
 	}
 	
 	//the below output is in the following format
@@ -123,7 +118,7 @@
 		$test_pattern = '/test/';
 		
 		if(preg_match($test_pattern, $subject)) {
-			update_status($twitter, "Responding!");
+			update_status($twitter, "@" . $screen_name . " responding!");
 		}
 		
 		else return;
@@ -136,8 +131,8 @@
 		$array = array('status' => $status_text);
 		$twitter->getfield = NULL;
 	
-		echo $twitter->setPostfields($array)
-				  ->buildOauth($post_url, $post_request)
-				  ->performRequest();
+		$twitter->setPostfields($array)
+					  ->buildOauth($post_url, $post_request)
+					  ->performRequest();
 	}
 ?>
