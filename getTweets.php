@@ -1,8 +1,14 @@
 <?php
 
+	/**
+		Get Tweets: a page polled by the Vibeometer box (an Arduino)
+			  Author: Aaron Arthur
+			 License: MIT License
+	**/
+
 	ini_set('display_errors', 1);
 
-	date_default_timezone_set('UTC');
+	date_default_timezone_set('America/New_York');
 
 	$tweetCount = 100;
 

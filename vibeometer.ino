@@ -42,16 +42,16 @@ int lastBadTweets = 0; // temp variable for tweetCount[1]
 int mentioned[NUMLEDS]; // is there a new mention? order is good mention, bad mention, regular mention
 int lastMentioned[NUMLEDS]; // temp variable for mentioned[]
 
-char ssid[] = "ncsu"; // network SSID (ncsu doesn't require a password but does require registration with NOMAD
+char ssid[] = "your ssid"; // network SSID (ncsu doesn't require a password but does require registration with NOMAD
 String currentLine = ""; // holder for parsing output from web page
-String getString = "/display/techshowcase/getTweets.php"; // URL to GET (location of PHP page)
+String getString = "your getTweets.php url"; // URL to GET (location of PHP page)
 
 int status = WL_IDLE_STATUS;
-char server[] = "webdev.lib.ncsu.edu"; // name address for your server
+char server[] = "your server"; // name address for your server
 
 WiFiClient client;
 
-void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3"))); // to redisable the wdt after reset
+void wdt_init(void) __attribute__((naked)) __attribute__((section(".init3"))); // to redisable the watch-dog timer after reset
 
 void setup() {
   wdt_init(); // turn the wdt off so we don't get continual resets
@@ -169,11 +169,11 @@ void connectToServer() {
     // Make a HTTP request:
     client.print("GET ");
     updateLEDs();
-    client.print("/display/techshowcase/getTweets.php");
+    client.print(getString);
     updateLEDs();
     client.println(" HTTP/1.1");
     updateLEDs();
-    client.println("Host:webdev.lib.ncsu.edu");
+    client.println(server);
     updateLEDs();
     client.println("Connection: close");
     updateLEDs();
