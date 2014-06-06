@@ -3,10 +3,12 @@
    Arduino Vibeometer
   
  This sketch controls a device that interacts with Twitter to display the campus mood at NC State University. 
+ See go.ncsu.edu/arduino or github.com/adarthur/vibeometer for more information.
   
  created 1 November 2013
  modified 22 May 2014
  by Aaron Arthur
+ MIT License
 */
 
 #include <WiFi.h>
