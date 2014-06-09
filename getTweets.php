@@ -90,7 +90,7 @@
 			if($timeDiff < 7 * 24 * 60 * 60 && $i == 2) //count mentions from the last 7 days
 			{
 				$count[$i]++;
-				if($timeDiff < 60) //analyse and/or respond to a mention from the last minute
+				if($timeDiff < 90) //analyse and/or respond to a mention from the last minute
 				{
 					if(is_good_tweet($obj["statuses"][$j]["text"])) $newTweet[0] = 1;
 					if(is_bad_tweet($obj["statuses"][$j]["text"])) $newTweet[1] = 1;
@@ -132,16 +132,40 @@
 		else return false;
 	}
 	
-	function respond_to_tweet($twitter, $tweet_obj) {
+	function respond_to_tweet($twitter, $tweet_obj, $count) {
 		$screen_name = $tweet_obj["user"]["screen_name"];
 		$subject = $tweet_obj["text"];
 		$test_pattern = '/test/';
+		$greet_pattern = '/hi|hello|greetings|what[\']*s up/';
+		$link_pattern = '/t\.co/';
+		$what_pattern = '/what happens/';
+		$user_feeling = '/I.*feel|I[\']*m feeling/';
+		$mood_query = '/mood|campus/';
 		
-		if(preg_match($test_pattern, $subject)) {
-			update_status($twitter, "@" . $screen_name . " responding!");
+		if(preg_match($test_pattern, $subject)) $response = " Responding!";
+		
+		else if(preg_match($what_pattern, $subject)) $response = " This happens!"; 
+		
+		else if(preg_match($greet_pattern, $subject)) $response = " I deal in vibes, not in greetings. How are you feeling today?";
+		
+		else if(preg_match($user_feeling, $subject)) {
+			if(is_good_tweet($subject) && is_bad_tweet($subject)) $response = " I'm picking up some mixed vibes from you.";
+			else if(is_good_tweet($subject)) $response = " Glad to hear it!";
+			else if(is_bad_tweet($subject)) $response = " that's too bad; maybe you'll feel better if you mention me again!";
+			else $response = " I don't think I'm qualified to diagnose that..";
 		}
 		
-		else return;
+		else if(preg_match($mood_query, $subject)) {
+			$response = " I'm feeling great! The vibe on campus is";
+			if($count[0] > $count[1]) $response = $response . " not so good...";
+			else $response = $response . " great, too!";
+		}
+		
+		else if(preg_match($link_pattern, $subject))	$response = " I'm not sure where that link goes, but I hope it's a picture of me!";
+		
+		else $response = " You rang?";
+				
+		if(!preg_match('/vibeometer/', $screen_name)) update_status($twitter, "@" . $screen_name . $response);
 	}
 	
 	function update_status($twitter, $status_text) {
