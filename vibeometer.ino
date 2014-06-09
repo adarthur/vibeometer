@@ -15,7 +15,7 @@
 #include <avr/wdt.h>
 
 #define soft_reset() do { wdt_enable(WDTO_15MS); for(;;) { } } while (0)
-#define ONE_DAY 86400000 // 24 hrs in milliseconds
+#define ONE_DAY 86400000 // 24 hrs in milliseconds. For soft reset.
 
 #define MAXFREQ 5.0 // highest frequency of the LED "heartbeat" (Hz)
 #define NUMLEDS 3 // number of LED panels to update
@@ -44,9 +44,10 @@ int lastBadTweets = 0; // temp variable for tweetCount[1]
 int mentioned[NUMLEDS]; // is there a new mention? order is good mention, bad mention, regular mention
 int lastMentioned[NUMLEDS]; // temp variable for mentioned[]
 
-char ssid[] = "your ssid"; // network SSID (ncsu doesn't require a password but does require registration with NOMAD
+char ssid[] = "you ssid"; // network SSID (ncsu doesn't require a password but does require registration with NOMAD
+char pass[] = "your password";
 String currentLine = ""; // holder for parsing output from web page
-String getString = "your getTweets.php url"; // URL to GET (location of PHP page)
+String getString = "your getTweets.php"; // URL to GET (location of PHP page)
 
 int status = WL_IDLE_STATUS;
 char server[] = "your server"; // name address for your server

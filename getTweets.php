@@ -4,6 +4,7 @@
 		Get Tweets: a page polled by the Vibeometer box (an Arduino)
 			  Author: Aaron Arthur
 			 License: MIT License
+			 Website: http://www.lib.ncsu.edu/vibeometer
 	**/
 
 	ini_set('display_errors', 1);
@@ -35,9 +36,9 @@
 
 	$url = 'https://api.twitter.com/1.1/search/tweets.json';
 
-	$search_string = "%28ncsu%29";
-	$good_search = "+AND+%28good+OR+great+OR+happy+OR+better+OR+lucky+OR+best%29";
-	$bad_search = "+AND+&28sad+OR+bad+OR+annoyed+OR+grumpy+OR+sick+OR+angry+OR+mad%29";
+	$search_string = "(ncsu)%20AND%20";
+	$good_search = "(good%20OR%20great%20OR%20happy%20OR%20better%20OR%20lucky%20OR%20best)";
+	$bad_search = "(sad%20OR%20bad%20OR%20fail%20OR%20annoyed%20OR%20sick%20OR%20angry%20OR%20mad)";
 
 
 	$good_getfield = "?q=" . $search_string . $good_search . "&count=" . $tweetCount;
@@ -48,18 +49,27 @@
 	$twitter = new TwitterAPIExchange($settings);
 
 	$json = array($twitter->setGetfield($good_getfield)
-				->buildOauth($url, $requestMethod)
-				->performRequest(),
-$twitter->setGetfield($bad_getfield)
-				->buildOauth($url, $requestMethod)
-				->performRequest(),
-$twitter->setGetfield($mention_getfield)
-				->buildOauth($url, $requestMethod)
-				->performRequest(),);
 
-				$count = array(0,0,0); //number of tweets this day in each category: good, bad, @vibeometer
+												->buildOauth($url, $requestMethod)
+
+												->performRequest(),
+
+								$twitter->setGetfield($bad_getfield)
+
+												->buildOauth($url, $requestMethod)
+
+												->performRequest(),
+
+								$twitter->setGetfield($mention_getfield)
+
+												->buildOauth($url, $requestMethod)
+
+												->performRequest(),);
+
+
+	$count = array(0,0,0); //number of tweets in each category: good, bad, @vibeometer
 	$newTweet = array(0,0,0); //1 or 0, is there a new tweet this minute?
-
+	
 	for($i = 0; $i < 3; $i++) {
 		$obj = json_decode($json[$i], true);
 		$j = 0;
@@ -67,17 +77,20 @@ $twitter->setGetfield($mention_getfield)
 			$tweetText = $obj["statuses"][$j]["text"];
 			$tweetTime = strtotime($obj["statuses"][$j]["created_at"]); //incrementally get the timestamp of each tweet in the category
 			$nowTime = time();
-						
-			if($nowTime - $tweetTime < 60) $newTweet[$i] = 1; //tell the box to flash if there's a new good tweet in the last minute
+			$timeDiff = $nowTime - $tweetTime;
 			
-			if($nowTime - $tweetTime < 2 * 60 * 60 && $i != 2) { //count good/bad tweets from the last two hours
+			$isReTweet = preg_match('/RT/', $tweetText);
+						
+			if($timeDiff < 60) $newTweet[$i] = 1; //tell the box to flash if there's a new good tweet in the last minute
+			
+			if($timeDiff < 24 * 60 * 60 && $i != 2 && !$isReTweet) { //count good/bad tweets from the last 24 hours
 				$count[$i]++; 
 			}
 			
-			if($nowTime - $tweetTime < 7 * 24 * 60 * 60 && $i == 2) //count mentions from the last 7 days
+			if($timeDiff < 7 * 24 * 60 * 60 && $i == 2) //count mentions from the last 7 days
 			{
 				$count[$i]++;
-				if($nowTime - $tweeTime < 2 * 60) //analyse and/or respond to a mention from the last minute
+				if($timeDiff < 60) //analyse and/or respond to a mention from the last minute
 				{
 					if(is_good_tweet($obj["statuses"][$j]["text"])) $newTweet[0] = 1;
 					if(is_bad_tweet($obj["statuses"][$j]["text"])) $newTweet[1] = 1;
@@ -102,9 +115,10 @@ $twitter->setGetfield($mention_getfield)
 		echo "$newTweet[$i]";
   }
 	
+	// currently, these functions are only invoked if there is a mention
 	function is_good_tweet($tweet_text) {
 		$subject = $tweet_text;
-		$good_pattern = '/good|great|happy|better|lucky|best/';
+		$good_pattern = '/good|best|great|happy|cool|awesome|sweet/';
 		
 		if(preg_match($good_pattern, $subject)) return true;
 		else return false;
@@ -112,7 +126,7 @@ $twitter->setGetfield($mention_getfield)
 	
 	function is_bad_tweet($tweet_text) {
 		$subject = $tweet_text;
-		$bad_pattern = '/sad|annoyed|grumpy|sick|angry|mad/';
+		$bad_pattern = '/bad|sad|annoyed|grumpy|sick|angry|mad/';
 		
 		if(preg_match($bad_pattern, $subject)) return true;
 		else return false;
