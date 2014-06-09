@@ -23,4 +23,4 @@ In vibeometer.ino:
 
 * You must change server to the URL of your server, e.g. "http://www.myserver.com/"
 
-*You can change the delay between polling getTweets.php by modifying the `for()` loops at the end of `outputToPanels()`. Note that with the current Twitter authentication scheme, searches are rate-limited to 180 per 15 minutes. For more info see https://dev.twitter.com/docs/rate-limiting/1.1
+* You can change the delay between polling getTweets.php by modifying the `for()` loops at the end of `outputToPanels()`. Note that with the current Twitter authentication scheme, searches are rate-limited to 180 per 15 minutes. For more info see https://dev.twitter.com/docs/rate-limiting/1.1
