@@ -44,13 +44,13 @@ int lastBadTweets = 0; // temp variable for tweetCount[1]
 int mentioned[NUMLEDS]; // is there a new mention? order is good mention, bad mention, regular mention
 int lastMentioned[NUMLEDS]; // temp variable for mentioned[]
 
-char ssid[] = "you ssid"; // network SSID (ncsu doesn't require a password but does require registration with NOMAD
+char ssid[] = "your ssid"; // network SSID (ncsu doesn't require a password but does require registration with NOMAD
 char pass[] = "your password";
 String currentLine = ""; // holder for parsing output from web page
 String getString = "your getTweets.php"; // URL to GET (location of PHP page)
 
 int status = WL_IDLE_STATUS;
-char server[] = "your server"; // name address for your server
+char server[] = "your server"; // name address for your server (without 'http://')
 
 WiFiClient client;
 
@@ -98,9 +98,7 @@ void setup() {
   while ( status != WL_CONNECTED) { 
     //Serial.print("Attempting to connect to SSID: ");
     //Serial.println(ssid);
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:  
-    // Nope, for us it's an open network (NCSU Nomad)  
-    status = WiFi.begin(ssid);
+    status = WiFi.begin(ssid); // Connect to an open network. Change this line if using WPA or WEP network:  
 
     // wait 5 seconds for connection:
     delay(5000);
@@ -162,7 +160,7 @@ void updateLEDs() {
 
 void connectToServer() {
   //Serial.println("\nStarting connection to server...");
-  // if you get a connection, report back via serial:
+  updateLEDs();
   if (client.connect(server, 80)) {
     updateLEDs();
     //Serial.print(millis());
@@ -176,6 +174,8 @@ void connectToServer() {
     updateLEDs();
     client.println(" HTTP/1.1");
     updateLEDs();
+    client.print("Host:");
+    updateLEDs();
     client.println(server);
     updateLEDs();
     client.println("Connection: close");
@@ -184,7 +184,6 @@ void connectToServer() {
     updateLEDs();
   }
 
-  //Wait for incoming bits, and then put the 0s and 1s into currentLine
   while(!client.available()){
     updateLEDs();
   }
