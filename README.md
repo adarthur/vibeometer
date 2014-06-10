@@ -3,7 +3,7 @@ Vibeometer
 
 Arduino Vibeometer: a Twitter interface to show the NC State campus mood.
 
-Check out https://lib.ncsu.edu/vibeometer for more information. 
+Check out http://go.ncsu.edu/arduino for more information. 
 
 The wrapper for connecting to Twitter is from J7mbo here: https://github.com/J7mbo/twitter-api-php
 
